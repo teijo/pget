@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 )
@@ -25,6 +26,28 @@ func ParseIndexString(index string) (number int, maxPadding int, paddingFound bo
 
 func ProbeUrlResource(s int) bool {
 	return s > 0 && s < 20
+}
+
+func IntLen(number int) int {
+	return int(math.Floor(math.Log10(float64(number)))) + 1
+}
+
+func ClosestShorterInt(number int) int {
+	if number < 10 {
+		return -1
+	}
+	multiplier := (IntLen(number) - 1)*10
+	return (number/multiplier)*multiplier - 1
+}
+
+func ProbeExistence(url string) bool {
+	return true
+}
+
+func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
+	format := fmt.Sprintf("%%0%dd", IntLen(testIndex))
+	paddedIndexString := fmt.Sprintf(format, ClosestShorterInt(testIndex))
+	return ProbeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
 }
 
 func Crawl(initial int, channel chan bool) {

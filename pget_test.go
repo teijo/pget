@@ -65,3 +65,21 @@ func TestUnsuccessfulCrawl(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestShorterLessThanTen(t *testing.T) {
+	if ClosestShorterInt(5) != -1 {
+		t.Fail()
+	}
+}
+
+func TestShorterTen(t *testing.T) {
+	if ClosestShorterInt(10) != 9 {
+		t.Fail()
+	}
+}
+
+func TestShorterTenThousand(t *testing.T) {
+	if ClosestShorterInt(10000) != 9999 {
+		t.Fail()
+	}
+}
