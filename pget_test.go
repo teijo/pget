@@ -47,3 +47,21 @@ func TestFindPatternWithNonNumber(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func decrement(index int) int { return index - 1 }
+
+func TestSuccessfulCrawl(t *testing.T) {
+	c := make(chan int)
+	go Crawl(2, decrement, c)
+	if <-c != 1 {
+		t.Fail()
+	}
+}
+
+func TestUnsuccessfulCrawl(t *testing.T) {
+	c := make(chan int)
+	go Crawl(100, decrement, c)
+	if <-c != -100 {
+		t.Fail()
+	}
+}
