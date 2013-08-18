@@ -32,14 +32,13 @@ func Crawl(initial int, channel chan bool) {
 }
 
 func Crawler(scan int, next func (int) int, done chan int) {
-	var do bool = true
 	channel := make(chan bool)
-	for do {
+	for {
 		go Crawl(scan, channel)
-		do = <-channel
-		if do {
-			scan = next(scan)
+		if !<-channel {
+			break
 		}
+		scan = next(scan)
 	}
 	done <- scan
 }
