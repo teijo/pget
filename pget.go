@@ -27,12 +27,21 @@ func ProbeUrlResource(s int) bool {
 	return s > 0 && s < 20
 }
 
-func Crawl(initial int, iter func (int) int, channel chan int) {
-	if ProbeUrlResource(initial) {
-		channel <- iter(initial)
-	} else {
-		channel <- -initial
+func Crawl(initial int, channel chan bool) {
+	channel <- ProbeUrlResource(initial)
+}
+
+func Crawler(scan int, next func (int) int, done chan int) {
+	var do bool = true
+	channel := make(chan bool)
+	for do {
+		go Crawl(scan, channel)
+		do = <-channel
+		if do {
+			scan = next(scan)
+		}
 	}
+	done <- scan
 }
 
 func main() {
@@ -48,11 +57,9 @@ func main() {
 	fmt.Printf("Parse results: number %d, maxPadding %d, paddingFound %t\n", number, maxPadding, paddingFound)
 
 	chanA, chanB := make(chan int), make(chan int)
-	var scanA, scanB = number, number + 1
-	go Crawl(scanA, func(index int) int { return index - 1 }, chanA)
-	go Crawl(scanB, func(index int) int { return index + 1 }, chanB)
-	var a, b = <-chanA, <-chanB
-	fmt.Printf("Crawl results: %d found?: %t, next step: %d; %d found?: %t, next step: %d\n",
-		scanA, a >= 0, a, scanB, b >= 0, b)
+	go Crawler(number, func(index int) int { return index - 1 }, chanA)
+	go Crawler(number + 1, func(index int) int { return index + 1 }, chanB)
+	fmt.Printf("Crawler 1 stopped at %d, crawler 2 stopped at %d\n",
+		<-chanA, <-chanB)
 	os.Exit(0)
 }
