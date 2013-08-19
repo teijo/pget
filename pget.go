@@ -5,22 +5,30 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"strings"
 	"strconv"
 )
 
-func FindPattern(url string) string {
-	var match []string = regexp.MustCompile("^[^\\d]*([\\d]+)[^\\d]+.*$").FindStringSubmatch(url)
-	if len(match) > 0 {
-		return match[1]
-	}
-	return ""
+type Pattern struct {
+	urlPrefix string
+	match     string
+	urlSuffix string
 }
 
-func ParseIndexString(index string) (number int, maxPadding int, paddingFound bool, err error) {
-	maxPadding = len(index)
-	paddingFound = maxPadding > 1 && (index[0] == '0')
+func FindPattern(url string) *Pattern {
+	var match []string = regexp.MustCompile("^[^\\d]*([\\d]+)[^\\d]+.*$").FindStringSubmatch(url)
+	if len(match) > 0 {
+		urlSegments := strings.SplitAfterN(url, match[1], 2)
+		return &Pattern{urlSegments[0], match[1], urlSegments[1]}
+	}
+	return nil
+}
+
+func ParseIndexString(pattern *Pattern) (number int, maxPadding int, paddingFound bool, err error) {
+	maxPadding = len(pattern.match)
+	paddingFound = maxPadding > 1 && (pattern.match[0] == '0')
 	var i64 int64 = 0
-	i64, err = strconv.ParseInt(index, 10, 16)
+	i64, err = strconv.ParseInt(pattern.match, 10, 16)
 	return int(i64), maxPadding, paddingFound, err
 }
 
@@ -71,11 +79,11 @@ func main() {
 		os.Exit(1)
 	}
 	url := os.Args[1]
-	match := FindPattern(url)
-	if len(match) == 0 {
+	pattern := FindPattern(url)
+	if pattern == nil {
 		os.Exit(1)
 	}
-	number, maxPadding, paddingFound, _ := ParseIndexString(match)
+	number, maxPadding, paddingFound, _ := ParseIndexString(pattern)
 	fmt.Printf("Parse results: number %d, maxPadding %d, paddingFound %t\n", number, maxPadding, paddingFound)
 
 	chanA, chanB := make(chan int), make(chan int)
