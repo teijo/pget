@@ -24,28 +24,28 @@ func TestNonMatchingUrl(t *testing.T) {
 }
 
 func TestFindPatternWithPadding(t *testing.T) {
-	number, maxPadding, paddingFound, _ := ParseIndexString(&Pattern{match: "00321"})
-	if number != 321 || maxPadding != 5 || paddingFound != true {
+	number, format, _ := ParseIndexAndFormat(&Pattern{match: "00321"})
+	if number != 321 || format != "%05d" {
 		t.Fail()
 	}
 }
 
 func TestFindPatternWithNoPadding(t *testing.T) {
-	number, maxPadding, paddingFound, _ := ParseIndexString(&Pattern{match: "123"})
-	if number != 123 || maxPadding != 3 || paddingFound != false {
+	number, format, _ := ParseIndexAndFormat(&Pattern{match: "123"})
+	if number != 123 || format != "%d" {
 		t.Fail()
 	}
 }
 
 func TestFindPatternWithZero(t *testing.T) {
-	number, maxPadding, paddingFound, _ := ParseIndexString(&Pattern{match: "0"})
-	if number != 0 || maxPadding != 1 || paddingFound != false {
+	number, format, _ := ParseIndexAndFormat(&Pattern{match: "0"})
+	if number != 0 || format != "%d" {
 		t.Fail()
 	}
 }
 
 func TestFindPatternWithNonNumber(t *testing.T) {
-	_, _, _, err := ParseIndexString(&Pattern{match: "XYZ"})
+	_, _, err := ParseIndexAndFormat(&Pattern{match: "XYZ"})
 	if err == nil {
 		t.Fail()
 	}

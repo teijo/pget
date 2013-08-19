@@ -24,12 +24,17 @@ func FindPattern(url string) *Pattern {
 	return nil
 }
 
-func ParseIndexString(pattern *Pattern) (number int, maxPadding int, paddingFound bool, err error) {
-	maxPadding = len(pattern.match)
-	paddingFound = maxPadding > 1 && (pattern.match[0] == '0')
+func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error) {
+	maxPadding := len(pattern.match)
+	if maxPadding > 1 && (pattern.match[0] == '0') {
+		format = fmt.Sprintf("%%0%dd", maxPadding)
+	} else {
+		format = "%d"
+	}
+
 	var i64 int64 = 0
 	i64, err = strconv.ParseInt(pattern.match, 10, 16)
-	return int(i64), maxPadding, paddingFound, err
+	return int(i64), format, err
 }
 
 func ProbeUrlResource(url string) bool {
@@ -88,8 +93,8 @@ func main() {
 	if pattern == nil {
 		os.Exit(1)
 	}
-	number, maxPadding, paddingFound, _ := ParseIndexString(pattern)
-	fmt.Printf("Parse results: number %d, maxPadding %d, paddingFound %t\n", number, maxPadding, paddingFound)
+	number, format, _ := ParseIndexAndFormat(pattern)
+	fmt.Printf("Parse results: number %d, format %s\n", number, format)
 
 	chanA, chanB := make(chan int), make(chan int)
 	go Crawler(number, pattern, func(index int) int { return index - 1 }, chanA)
