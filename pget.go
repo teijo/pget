@@ -18,7 +18,7 @@ type Pattern struct {
 func FindPattern(url string) *Pattern {
 	var match []string = regexp.MustCompile("^[^\\d]*([\\d]+)[^\\d]+.*$").FindStringSubmatch(url)
 	if len(match) > 0 {
-		urlSegments := strings.SplitAfterN(url, match[1], 2)
+		urlSegments := strings.SplitN(url, match[1], 2)
 		return &Pattern{urlSegments[0], match[1], urlSegments[1]}
 	}
 	return nil
@@ -32,8 +32,8 @@ func ParseIndexString(pattern *Pattern) (number int, maxPadding int, paddingFoun
 	return int(i64), maxPadding, paddingFound, err
 }
 
-func ProbeUrlResource(s int) bool {
-	return s > 0 && s < 20
+func ProbeUrlResource(url string) bool {
+	return true
 }
 
 func IntLen(number int) int {
@@ -58,14 +58,19 @@ func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 	return ProbeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
 }
 
-func Crawl(initial int, channel chan bool) {
-	channel <- ProbeUrlResource(initial)
+func Crawl(scan int, pattern *Pattern, channel chan bool) {
+	channel <- scan > 0 && scan < 20 && ProbeUrlResource(BuildUrl(pattern, scan))
 }
 
-func Crawler(scan int, next func (int) int, done chan int) {
+func BuildUrl(pattern *Pattern, scan int) string {
+	return fmt.Sprintf("%s%d%s", pattern.urlPrefix, scan, pattern.urlSuffix)
+}
+
+
+func Crawler(scan int, pattern *Pattern, next func (int) int, done chan int) {
 	channel := make(chan bool)
 	for {
-		go Crawl(scan, channel)
+		go Crawl(scan, pattern, channel)
 		if !<-channel {
 			break
 		}
@@ -87,8 +92,8 @@ func main() {
 	fmt.Printf("Parse results: number %d, maxPadding %d, paddingFound %t\n", number, maxPadding, paddingFound)
 
 	chanA, chanB := make(chan int), make(chan int)
-	go Crawler(number, func(index int) int { return index - 1 }, chanA)
-	go Crawler(number + 1, func(index int) int { return index + 1 }, chanB)
+	go Crawler(number, pattern, func(index int) int { return index - 1 }, chanA)
+	go Crawler(number + 1, pattern, func(index int) int { return index + 1 }, chanB)
 	fmt.Printf("Crawler 1 stopped at %d, crawler 2 stopped at %d\n",
 		<-chanA, <-chanB)
 	os.Exit(0)
