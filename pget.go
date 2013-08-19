@@ -63,19 +63,19 @@ func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 	return ProbeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
 }
 
-func Crawl(scan int, pattern *Pattern, channel chan bool) {
-	channel <- scan > 0 && scan < 20 && ProbeUrlResource(BuildUrl(pattern, scan))
+func BuildUrl(scan int, format string, pattern *Pattern) string {
+	printFmt := fmt.Sprintf("%%s%s%%s", format)
+	return fmt.Sprintf(printFmt, pattern.urlPrefix, scan, pattern.urlSuffix)
 }
 
-func BuildUrl(pattern *Pattern, scan int) string {
-	return fmt.Sprintf("%s%d%s", pattern.urlPrefix, scan, pattern.urlSuffix)
+func Crawl(scan int, format string, pattern *Pattern, channel chan bool) {
+	channel <- scan > 0 && scan < 20 && ProbeUrlResource(BuildUrl(scan, format, pattern))
 }
 
-
-func Crawler(scan int, pattern *Pattern, next func (int) int, done chan int) {
+func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
 	channel := make(chan bool)
 	for {
-		go Crawl(scan, pattern, channel)
+		go Crawl(scan, format, pattern, channel)
 		if !<-channel {
 			break
 		}
@@ -97,8 +97,8 @@ func main() {
 	fmt.Printf("Parse results: number %d, format %s\n", number, format)
 
 	chanA, chanB := make(chan int), make(chan int)
-	go Crawler(number, pattern, func(index int) int { return index - 1 }, chanA)
-	go Crawler(number + 1, pattern, func(index int) int { return index + 1 }, chanB)
+	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, chanA)
+	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, chanB)
 	fmt.Printf("Crawler 1 stopped at %d, crawler 2 stopped at %d\n",
 		<-chanA, <-chanB)
 	os.Exit(0)

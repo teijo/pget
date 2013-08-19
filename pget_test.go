@@ -55,7 +55,7 @@ func decrement(index int) int { return index - 1 }
 
 func TestSuccessfulCrawl(t *testing.T) {
 	c := make(chan int)
-	go Crawler(2, &Pattern{urlPrefix: "<", match: "5", urlSuffix: ">"}, decrement, c)
+	go Crawler(2, "%d", &Pattern{urlPrefix: "<", match: "5", urlSuffix: ">"}, decrement, c)
 	if <-c != 0 {
 		t.Fail()
 	}
@@ -63,7 +63,7 @@ func TestSuccessfulCrawl(t *testing.T) {
 
 func TestUnsuccessfulCrawl(t *testing.T) {
 	c := make(chan int)
-	go Crawler(100, &Pattern{urlPrefix: "<", match: "100", urlSuffix: ">"}, decrement, c)
+	go Crawler(100, "%d", &Pattern{urlPrefix: "<", match: "100", urlSuffix: ">"}, decrement, c)
 	if <-c != 100 {
 		t.Fail()
 	}
