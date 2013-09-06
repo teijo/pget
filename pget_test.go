@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
 
 func TestNumberPattern(t *testing.T) {
 	pattern := FindPattern("http://www.site.com/path/pic_23.jpg")
@@ -47,6 +52,44 @@ func TestFindPatternWithZero(t *testing.T) {
 func TestFindPatternWithNonNumber(t *testing.T) {
 	_, _, err := ParseIndexAndFormat(&Pattern{match: "XYZ"})
 	if err == nil {
+		t.Fail()
+	}
+}
+
+func loopbacKServer() *httptest.Server {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := http.StatusNotFound
+		number := 0
+		n, _ := fmt.Sscanf(r.URL.Path, "/file/%d.ext", &number)
+		if n ==  1 && number > 0 && number < 20 {
+			status = http.StatusOK
+		}
+		w.WriteHeader(status)
+		fmt.Fprintln(w, "response")
+	}))
+	return s
+}
+
+func mkUrl(s *httptest.Server, number int) string {
+	return fmt.Sprintf("%s/file/%d.ext", s.URL, number)
+}
+
+func TestSuccessfulLoopback(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
+	res, _ := http.Get(mkUrl(s, 3))
+	if res.StatusCode != 200 {
+		t.Fail()
+	}
+}
+
+func TestFailingLoopback(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
+	res, _ := http.Get(mkUrl(s, 100))
+	if res.StatusCode != 404 {
 		t.Fail()
 	}
 }
