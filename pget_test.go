@@ -65,7 +65,6 @@ func loopbacKServer() *httptest.Server {
 			status = http.StatusOK
 		}
 		w.WriteHeader(status)
-		fmt.Fprintln(w, "response")
 	}))
 	return s
 }

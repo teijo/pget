@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/url"
 	"net/http"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"strconv"
@@ -43,13 +44,40 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 	return int(i64), format, err
 }
 
-func ProbeUrlResource(url string) bool {
-	res, err := http.Get(url)
+func ProbeUrlResource(urlString string) bool {
+	res, err := http.Get(urlString)
+
 	if (err != nil) {
-		fmt.Printf("FAILED: %s\n", err)
+		fmt.Printf("GET FAILED: %s\n", err)
 		return false
 	}
-	return res.StatusCode == 200
+
+	defer res.Body.Close()
+	fmt.Printf("Probing %s ... %d\n", urlString, res.StatusCode)
+
+	if res.StatusCode != 200 {
+		return false
+	}
+
+	urlSegments := strings.Split(urlString, "/")
+	filename := urlSegments[len(urlSegments)-1]
+	body, err := ioutil.ReadAll(res.Body)
+	if (err != nil) {
+		fmt.Printf("Reading FAILED: %s\n", err)
+		return false
+	}
+
+	if (len(body) == 0) {
+		return true
+	}
+
+	err = ioutil.WriteFile(filename, body, os.ModePerm)
+	if (err != nil) {
+		fmt.Printf("Writing FAILED: %s\n", err)
+		return false
+	}
+
+	return true
 }
 
 func IntLen(number int) int {
