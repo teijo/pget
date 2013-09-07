@@ -44,7 +44,11 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 }
 
 func ProbeUrlResource(url string) bool {
-	res, _ := http.Get(url)
+	res, err := http.Get(url)
+	if (err != nil) {
+		fmt.Printf("FAILED: %s\n", err)
+		return false
+	}
 	return res.StatusCode == 200
 }
 
