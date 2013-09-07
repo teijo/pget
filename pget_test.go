@@ -70,6 +70,11 @@ func loopbacKServer() *httptest.Server {
 	return s
 }
 
+func mkPaddedUrl(s *httptest.Server, number int, padding int) string {
+	format := fmt.Sprintf("%%0%dd", padding)
+	return fmt.Sprintf(fmt.Sprintf("%s/file/%s.ext", s.URL, format), number)
+}
+
 func mkUrl(s *httptest.Server, number int) string {
 	return fmt.Sprintf("%s/file/%d.ext", s.URL, number)
 }
@@ -118,6 +123,36 @@ func TestUnsuccessfulCrawl(t *testing.T) {
 	c := make(chan int)
 
 	pattern := FindPattern(mkUrl(s, 100))
+	number, format, _ := ParseIndexAndFormat(pattern)
+
+	go Crawler(number, format, pattern, decrement, c)
+	if <-c == 0 {
+		t.Fail()
+	}
+}
+
+func TestSuccessfulPaddedCrawl(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
+	c := make(chan int)
+
+	pattern := FindPattern(mkPaddedUrl(s, 10, 5))
+	number, format, _ := ParseIndexAndFormat(pattern)
+
+	go Crawler(number, format, pattern, decrement, c)
+	if <-c != 0 {
+		t.Fail()
+	}
+}
+
+func TestUnsuccessfulPaddedCrawl(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
+	c := make(chan int)
+
+	pattern := FindPattern(mkPaddedUrl(s, 100, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	go Crawler(number, format, pattern, decrement, c)
