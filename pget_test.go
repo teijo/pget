@@ -97,17 +97,31 @@ func TestFailingLoopback(t *testing.T) {
 func decrement(index int) int { return index - 1 }
 
 func TestSuccessfulCrawl(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
 	c := make(chan int)
-	go Crawler(2, "%d", &Pattern{urlPrefix: "<", match: "5", urlSuffix: ">"}, decrement, c)
+
+	pattern := FindPattern(mkUrl(s, 10))
+	number, format, _ := ParseIndexAndFormat(pattern)
+
+	go Crawler(number, format, pattern, decrement, c)
 	if <-c != 0 {
 		t.Fail()
 	}
 }
 
 func TestUnsuccessfulCrawl(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
 	c := make(chan int)
-	go Crawler(100, "%d", &Pattern{urlPrefix: "<", match: "100", urlSuffix: ">"}, decrement, c)
-	if <-c != 100 {
+
+	pattern := FindPattern(mkUrl(s, 100))
+	number, format, _ := ParseIndexAndFormat(pattern)
+
+	go Crawler(number, format, pattern, decrement, c)
+	if <-c == 0 {
 		t.Fail()
 	}
 }

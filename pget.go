@@ -4,6 +4,8 @@ import (
 	"os"
 	"fmt"
 	"math"
+	"net/url"
+	"net/http"
 	"regexp"
 	"strings"
 	"strconv"
@@ -15,11 +17,15 @@ type Pattern struct {
 	urlSuffix string
 }
 
-func FindPattern(url string) *Pattern {
-	var match []string = regexp.MustCompile("^[^\\d]*([\\d]+)[^\\d]+.*$").FindStringSubmatch(url)
+func FindPattern(urlString string) *Pattern {
+	u, err := url.Parse(urlString)
+	if (err != nil) {
+		println(err)
+	}
+	var match []string = regexp.MustCompile("^[^\\d]*([\\d]+)[^\\d]+.*$").FindStringSubmatch(u.Path)
 	if len(match) > 0 {
-		urlSegments := strings.SplitN(url, match[1], 2)
-		return &Pattern{urlSegments[0], match[1], urlSegments[1]}
+		urlSegments := strings.SplitN(u.Path, match[1], 2)
+		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, urlSegments[0]), match[1], urlSegments[1]}
 	}
 	return nil
 }
@@ -38,7 +44,8 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 }
 
 func ProbeUrlResource(url string) bool {
-	return true
+	res, _ := http.Get(url)
+	return res.StatusCode == 200
 }
 
 func IntLen(number int) int {
@@ -69,7 +76,7 @@ func BuildUrl(scan int, format string, pattern *Pattern) string {
 }
 
 func Crawl(scan int, format string, pattern *Pattern, channel chan bool) {
-	channel <- scan > 0 && scan < 20 && ProbeUrlResource(BuildUrl(scan, format, pattern))
+	channel <- ProbeUrlResource(BuildUrl(scan, format, pattern))
 }
 
 func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
