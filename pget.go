@@ -123,13 +123,21 @@ func Crawler(scan int, format string, pattern *Pattern, next func (int) int, don
 	done <- scan
 }
 
+func printUsage() {
+	println("pget will try to detect a pattern in given URL and download files from similar URLs")
+	println("")
+	println("usage: pget <url>")
+}
+
 func main() {
 	if len(os.Args) < 2 {
+		printUsage()
 		os.Exit(1)
 	}
 	url := os.Args[1]
 	pattern := FindPattern(url)
 	if pattern == nil {
+		fmt.Printf("No pattern found in \"%s\"\n", url)
 		os.Exit(1)
 	}
 	number, format, _ := ParseIndexAndFormat(pattern)
