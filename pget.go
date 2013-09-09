@@ -25,13 +25,20 @@ func fileName(u *url.URL) (string, string) {
 }
 
 func extractIndex(str string) (bool, *Pattern) {
-	match := regexp.MustCompile("(^[^\\d]*)([\\d]+)([^\\d]+.*)$").FindStringSubmatch(str)
+	match := regexp.MustCompile("(^[^\\d]*)([\\d]+)([^\\d]*)$").FindStringSubmatch(str)
 	success := len(match) > 0 && len(match[2]) > 0
 	var pat *Pattern = nil
 	if success {
 		pat = &Pattern{match[1], match[2], match[3]}
 	}
 	return success, pat
+}
+
+func condQueryJoin(a string, u *url.URL) string {
+	if len(u.RawQuery) > 0 {
+		return fmt.Sprintf("%s?%s", a, u.RawQuery)
+	}
+	return fmt.Sprintf("%s", a)
 }
 
 func FindPattern(urlString string) (*Pattern, error) {
@@ -43,17 +50,17 @@ func FindPattern(urlString string) (*Pattern, error) {
 	filePath, file := fileName(u)
 	match, pat := extractIndex(file)
 	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}, nil
+		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}, nil
 	}
 
 	match, pat = extractIndex(u.RawQuery)
 	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}, nil
+		return &Pattern{fmt.Sprintf("http://%s%s?%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}, nil
 	}
 
 	match, pat = extractIndex(u.Path)
 	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}, nil
+		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}, nil
 	}
 
 	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)

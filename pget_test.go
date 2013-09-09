@@ -30,7 +30,7 @@ func TestPrecedenceForFile(t *testing.T) {
 }
 
 func TestPrecedenceForQuery(t *testing.T) {
-	pattern, _ := FindPattern("http://www.site.com/path/1/a.zip?a=b&param=3&x=y")
+	pattern, _ := FindPattern("http://www.site.com/path/1/a.zip?a=b&param=3")
 	if pattern.match != "3" {
 		println(pattern.match)
 		t.Fail()
@@ -41,6 +41,36 @@ func TestPrecedenceForPath(t *testing.T) {
 	pattern, _ := FindPattern("http://www.site.com/path/1/a.zip?a=b")
 	if pattern.match != "1" {
 		println(pattern.match)
+		t.Fail()
+	}
+}
+
+func TestPatternFinderIntegrityInFile(t *testing.T) {
+	testUrl := "http://www.site.com/path/1.zip"
+	pattern, _ := FindPattern(testUrl)
+	result := fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix)
+	if result != testUrl {
+		println(result)
+		t.Fail()
+	}
+}
+
+func TestPatternFinderIntegrityInQuery(t *testing.T) {
+	testUrl := "http://www.site.com/path/a.zip?a=b&x=1&z=q"
+	pattern, _ := FindPattern(testUrl)
+	result := fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix)
+	if result != testUrl {
+		println(result)
+		t.Fail()
+	}
+}
+
+func TestPatternFinderIntegrityInPath(t *testing.T) {
+	testUrl := "http://www.site.com/path/1/a.zip"
+	pattern, _ := FindPattern(testUrl)
+	result := fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix)
+	if result != testUrl {
+		println(result)
 		t.Fail()
 	}
 }
