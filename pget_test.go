@@ -85,7 +85,7 @@ func loopbacKServer() *httptest.Server {
 		status := http.StatusNotFound
 		number := 0
 		n, _ := fmt.Sscanf(r.URL.Path, "/file/%d.ext", &number)
-		if n ==  1 && number > 0 && number < 20 {
+		if n == 1 && number > 0 && number < 20 {
 			status = http.StatusOK
 		}
 		w.WriteHeader(status)

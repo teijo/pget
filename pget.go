@@ -20,7 +20,7 @@ type Pattern struct {
 
 func fileName(u *url.URL) (string, string) {
 	var urlSegments []string = strings.Split(u.Path, "/")
-	last := len(urlSegments)-1
+	last := len(urlSegments) - 1
 	return strings.Join(urlSegments[:last], "/"), urlSegments[last]
 }
 
@@ -88,7 +88,7 @@ func ProbeUrlResource(urlString string) bool {
 	}
 
 	urlSegments := strings.Split(urlString, "/")
-	filename := urlSegments[len(urlSegments)-1]
+	filename := urlSegments[len(urlSegments) - 1]
 	body, err := ioutil.ReadAll(res.Body)
 	if (err != nil) {
 		fmt.Printf("Reading FAILED: %s\n", err)
