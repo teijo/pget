@@ -13,9 +13,9 @@ import (
 )
 
 type Pattern struct {
-	urlPrefix string
-	match     string
-	urlSuffix string
+	prefix string
+	match  string
+	suffix string
 }
 
 func fileName(u *url.URL) (string, string) {
@@ -24,8 +24,14 @@ func fileName(u *url.URL) (string, string) {
 	return strings.Join(urlSegments[:last], "/"), urlSegments[last]
 }
 
-func extractIndex(str string) []string {
-	return regexp.MustCompile("(^[^\\d]*)([\\d]+)([^\\d]+.*)$").FindStringSubmatch(str)
+func extractIndex(str string) (bool, *Pattern) {
+	match := regexp.MustCompile("(^[^\\d]*)([\\d]+)([^\\d]+.*)$").FindStringSubmatch(str)
+	success := len(match) > 0 && len(match[2]) > 0
+	var pat *Pattern = nil
+	if success {
+		pat = &Pattern{match[1], match[2], match[3]}
+	}
+	return success, pat
 }
 
 func FindPattern(urlString string) *Pattern {
@@ -34,23 +40,20 @@ func FindPattern(urlString string) *Pattern {
 		println(err)
 	}
 	filePath, file := fileName(u)
-	var fileMatch []string = extractIndex(file)
+	match, pat := extractIndex(file)
 
-	hasFileMatch := len(fileMatch) > 0 && len(fileMatch[2]) > 0
-	if hasFileMatch {
-		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, fileMatch[1]), fileMatch[2], fmt.Sprintf("%s?%s", fileMatch[3], u.RawQuery)}
+	if match {
+		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}
 	}
 
-	var queryMatch []string = extractIndex(u.RawQuery)
-	hasQueryMatch := len(queryMatch) > 0 && len(queryMatch[2]) > 0
-	if hasQueryMatch {
-		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, queryMatch[1]), queryMatch[2], queryMatch[3]}
+	match, pat = extractIndex(u.RawQuery)
+	if match {
+		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}
 	}
 
-	var pathMatch []string = extractIndex(u.Path)
-	hasPathMatch := len(pathMatch) > 0 && len(pathMatch[2]) > 0
-	if hasPathMatch {
-		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pathMatch[1]), pathMatch[2], fmt.Sprintf("%s?%s", pathMatch[3], u.RawQuery)}
+	match, pat = extractIndex(u.Path)
+	if match {
+		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}
 	}
 
 	return nil
@@ -129,7 +132,7 @@ func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 
 func BuildUrl(scan int, format string, pattern *Pattern) string {
 	printFmt := fmt.Sprintf("%%s%s%%s", format)
-	return fmt.Sprintf(printFmt, pattern.urlPrefix, scan, pattern.urlSuffix)
+	return fmt.Sprintf(printFmt, pattern.prefix, scan, pattern.suffix)
 }
 
 func Crawl(scan int, format string, pattern *Pattern, channel chan bool) {
