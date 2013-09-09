@@ -21,6 +21,22 @@ func TestNumberPatternWithQuery(t *testing.T) {
 	}
 }
 
+func TestPrecedenceForFile(t *testing.T) {
+	pattern := FindPattern("http://www.site.com/path/1/2.rar?param=3")
+	if pattern.match != "2" {
+		println(pattern.match)
+		t.Fail()
+	}
+}
+
+func TestPrecedenceForQuery(t *testing.T) {
+	pattern := FindPattern("http://www.site.com/path/1/a.zip?a=b&param=3&x=y")
+	if pattern.match != "3" {
+		println(pattern.match)
+		t.Fail()
+	}
+}
+
 func TestNonMatchingUrl(t *testing.T) {
 	pattern := FindPattern("http://www.site.com/path/pic_XX.jpg")
 	if pattern != nil {

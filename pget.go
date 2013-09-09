@@ -18,16 +18,35 @@ type Pattern struct {
 	urlSuffix string
 }
 
+func fileName(u *url.URL) (string, string) {
+	var urlSegments []string = strings.Split(u.Path, "/")
+	last := len(urlSegments)-1
+	return strings.Join(urlSegments[:last], "/"), urlSegments[last]
+}
+
+func extractIndex(str string) []string {
+	return regexp.MustCompile("(^[^\\d]*)([\\d]+)([^\\d]+.*)$").FindStringSubmatch(str)
+}
+
 func FindPattern(urlString string) *Pattern {
 	u, err := url.Parse(urlString)
 	if (err != nil) {
 		println(err)
 	}
-	var match []string = regexp.MustCompile("^[^\\d]*([\\d]+)[^\\d]+.*$").FindStringSubmatch(u.Path)
-	if len(match) > 0 {
-		urlSegments := strings.SplitN(u.Path, match[1], 2)
-		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, urlSegments[0]), match[1], urlSegments[1]}
+	filePath, file := fileName(u)
+	var fileMatch []string = extractIndex(file)
+
+	hasFileMatch := len(fileMatch) > 0 && len(fileMatch[2]) > 0
+	if hasFileMatch {
+		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, fileMatch[1]), fileMatch[2], fmt.Sprintf("%s?%s", fileMatch[3], u.RawQuery)}
 	}
+
+	var queryMatch []string = extractIndex(u.RawQuery)
+	hasQueryMatch := len(queryMatch) > 0 && len(queryMatch[2]) > 0
+	if hasQueryMatch {
+		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, queryMatch[1]), queryMatch[2], queryMatch[3]}
+	}
+
 	return nil
 }
 
