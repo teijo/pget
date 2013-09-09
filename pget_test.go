@@ -8,21 +8,21 @@ import (
 )
 
 func TestNumberPattern(t *testing.T) {
-	pattern := FindPattern("http://www.site.com/path/pic_23.jpg")
+	pattern, _ := FindPattern("http://www.site.com/path/pic_23.jpg")
 	if pattern.match != "23" {
 		t.Fail()
 	}
 }
 
 func TestNumberPatternWithQuery(t *testing.T) {
-	pattern := FindPattern("http://www.site.com/path/pic_23.jpg?param=123")
+	pattern, _ := FindPattern("http://www.site.com/path/pic_23.jpg?param=123")
 	if pattern.match != "23" {
 		t.Fail()
 	}
 }
 
 func TestPrecedenceForFile(t *testing.T) {
-	pattern := FindPattern("http://www.site.com/path/1/2.rar?param=3")
+	pattern, _ := FindPattern("http://www.site.com/path/1/2.rar?param=3")
 	if pattern.match != "2" {
 		println(pattern.match)
 		t.Fail()
@@ -30,7 +30,7 @@ func TestPrecedenceForFile(t *testing.T) {
 }
 
 func TestPrecedenceForQuery(t *testing.T) {
-	pattern := FindPattern("http://www.site.com/path/1/a.zip?a=b&param=3&x=y")
+	pattern, _ := FindPattern("http://www.site.com/path/1/a.zip?a=b&param=3&x=y")
 	if pattern.match != "3" {
 		println(pattern.match)
 		t.Fail()
@@ -38,7 +38,7 @@ func TestPrecedenceForQuery(t *testing.T) {
 }
 
 func TestPrecedenceForPath(t *testing.T) {
-	pattern := FindPattern("http://www.site.com/path/1/a.zip?a=b")
+	pattern, _ := FindPattern("http://www.site.com/path/1/a.zip?a=b")
 	if pattern.match != "1" {
 		println(pattern.match)
 		t.Fail()
@@ -46,7 +46,7 @@ func TestPrecedenceForPath(t *testing.T) {
 }
 
 func TestNonMatchingUrl(t *testing.T) {
-	pattern := FindPattern("http://www.site.com/path/pic_XX.jpg")
+	pattern, _ := FindPattern("http://www.site.com/path/pic_XX.jpg")
 	if pattern != nil {
 		t.Fail()
 	}
@@ -130,7 +130,7 @@ func TestSuccessfulCrawl(t *testing.T) {
 
 	c := make(chan int)
 
-	pattern := FindPattern(mkUrl(s, 10))
+	pattern, _ := FindPattern(mkUrl(s, 10))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	go Crawler(number, format, pattern, decrement, c)
@@ -145,7 +145,7 @@ func TestUnsuccessfulCrawl(t *testing.T) {
 
 	c := make(chan int)
 
-	pattern := FindPattern(mkUrl(s, 100))
+	pattern, _ := FindPattern(mkUrl(s, 100))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	go Crawler(number, format, pattern, decrement, c)
@@ -160,7 +160,7 @@ func TestSuccessfulPaddedCrawl(t *testing.T) {
 
 	c := make(chan int)
 
-	pattern := FindPattern(mkPaddedUrl(s, 10, 5))
+	pattern, _ := FindPattern(mkPaddedUrl(s, 10, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	go Crawler(number, format, pattern, decrement, c)
@@ -175,7 +175,7 @@ func TestUnsuccessfulPaddedCrawl(t *testing.T) {
 
 	c := make(chan int)
 
-	pattern := FindPattern(mkPaddedUrl(s, 100, 5))
+	pattern, _ := FindPattern(mkPaddedUrl(s, 100, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	go Crawler(number, format, pattern, decrement, c)

@@ -34,29 +34,29 @@ func extractIndex(str string) (bool, *Pattern) {
 	return success, pat
 }
 
-func FindPattern(urlString string) *Pattern {
+func FindPattern(urlString string) (*Pattern, error) {
 	u, err := url.Parse(urlString)
 	if (err != nil) {
-		println(err)
+		return nil, err
 	}
+
 	filePath, file := fileName(u)
 	match, pat := extractIndex(file)
-
 	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}
+		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}, nil
 	}
 
 	match, pat = extractIndex(u.RawQuery)
 	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}
+		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}, nil
 	}
 
 	match, pat = extractIndex(u.Path)
 	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}
+		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, fmt.Sprintf("%s?%s", pat.suffix, u.RawQuery)}, nil
 	}
 
-	return nil
+	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)
 }
 
 func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error) {
@@ -163,9 +163,9 @@ func main() {
 		os.Exit(1)
 	}
 	url := os.Args[1]
-	pattern := FindPattern(url)
-	if pattern == nil {
-		fmt.Printf("No pattern found in \"%s\"\n", url)
+	pattern, err := FindPattern(url)
+	if err != nil {
+		fmt.Printf("%s\n", err)
 		os.Exit(1)
 	}
 	number, format, _ := ParseIndexAndFormat(pattern)
