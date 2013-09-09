@@ -37,6 +37,14 @@ func TestPrecedenceForQuery(t *testing.T) {
 	}
 }
 
+func TestPrecedenceForPath(t *testing.T) {
+	pattern := FindPattern("http://www.site.com/path/1/a.zip?a=b")
+	if pattern.match != "1" {
+		println(pattern.match)
+		t.Fail()
+	}
+}
+
 func TestNonMatchingUrl(t *testing.T) {
 	pattern := FindPattern("http://www.site.com/path/pic_XX.jpg")
 	if pattern != nil {

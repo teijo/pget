@@ -47,6 +47,12 @@ func FindPattern(urlString string) *Pattern {
 		return &Pattern{fmt.Sprintf("http://%s%s%s", u.Host, u.Path, queryMatch[1]), queryMatch[2], queryMatch[3]}
 	}
 
+	var pathMatch []string = extractIndex(u.Path)
+	hasPathMatch := len(pathMatch) > 0 && len(pathMatch[2]) > 0
+	if hasPathMatch {
+		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pathMatch[1]), pathMatch[2], fmt.Sprintf("%s?%s", pathMatch[3], u.RawQuery)}
+	}
+
 	return nil
 }
 
