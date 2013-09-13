@@ -66,16 +66,31 @@ func FindPattern(urlString string) (*Pattern, error) {
 	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)
 }
 
+func probeExistence(url string) bool {
+	return false
+}
+
+func testPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
+	format := fmt.Sprintf("%%0%dd", IntLen(testIndex))
+	closest := ClosestShorterInt(testIndex)
+	paddedIndexString := fmt.Sprintf(format, closest)
+	return probeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
+}
+
+func paddingFound(pattern *Pattern, index int) bool {
+	return testPadding(pattern.prefix, pattern.suffix, index)
+}
+
 func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error) {
+	var i64 int64 = 0
+	i64, err = strconv.ParseInt(pattern.match, 10, 16)
 	maxPadding := len(pattern.match)
-	if maxPadding > 1 && (pattern.match[0] == '0') {
+	if maxPadding > 1 && (pattern.match[0] == '0') || paddingFound(pattern, int(i64)) {
 		format = fmt.Sprintf("%%0%dd", maxPadding)
 	} else {
 		format = "%d"
 	}
 
-	var i64 int64 = 0
-	i64, err = strconv.ParseInt(pattern.match, 10, 16)
 	return int(i64), format, err
 }
 
@@ -116,7 +131,10 @@ func ProbeUrlResource(urlString string) bool {
 }
 
 func IntLen(number int) int {
-	return int(math.Floor(math.Log10(float64(number)))) + 1
+	if (number == 0) {
+		return 1
+	}
+	return int(math.Floor(math.Log10(math.Abs(float64(number))))) + 1
 }
 
 func ClosestShorterInt(number int) int {
@@ -125,16 +143,6 @@ func ClosestShorterInt(number int) int {
 	}
 	multiplier := (IntLen(number) - 1)*10
 	return (number/multiplier)*multiplier - 1
-}
-
-func ProbeExistence(url string) bool {
-	return true
-}
-
-func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
-	format := fmt.Sprintf("%%0%dd", IntLen(testIndex))
-	paddedIndexString := fmt.Sprintf(format, ClosestShorterInt(testIndex))
-	return ProbeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
 }
 
 func BuildUrl(scan int, format string, pattern *Pattern) string {

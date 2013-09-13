@@ -231,3 +231,26 @@ func TestShorterTenThousand(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func assert(t *testing.T, a int, b int) {
+	if a != b {
+		fmt.Printf("%d not equal to %d\n", a, b)
+		t.Fail()
+	}
+}
+
+func TestIntLengthZero(t *testing.T) {
+	assert(t, IntLen(0), 1)
+}
+
+func TestIntLengthTen(t *testing.T) {
+	assert(t, IntLen(10), 2)
+}
+
+func TestIntLengthOffByOne(t *testing.T) {
+	assert(t, IntLen(999), 3)
+}
+
+func TestIntLengthNegative(t *testing.T) {
+	assert(t, IntLen(-10), 2)
+}
