@@ -178,8 +178,8 @@ func TestSuccessfulCrawl(t *testing.T) {
 	pattern, _ := FindPattern(mkUrl(s, 10))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	res := StartCrawl(number, format, pattern, decrementCrawl)
-	if res != 0 {
+	res, err := StartCrawl(number, format, pattern, decrementCrawl)
+	if res != 0 || err != nil {
 		t.Fail()
 	}
 }
@@ -191,8 +191,8 @@ func TestUnsuccessfulCrawl(t *testing.T) {
 	pattern, _ := FindPattern(mkUrl(s, 100))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	res := StartCrawl(number, format, pattern, decrementCrawl)
-	if res == 0 {
+	_, err := StartCrawl(number, format, pattern, decrementCrawl)
+	if err == nil {
 		t.Fail()
 	}
 }
@@ -204,8 +204,8 @@ func TestSuccessfulPaddedCrawl(t *testing.T) {
 	pattern, _ := FindPattern(mkPaddedUrl(s, 10, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	res := StartCrawl(number, format, pattern, decrementCrawl)
-	if res != 0 {
+	res, err := StartCrawl(number, format, pattern, decrementCrawl)
+	if res != 0 || err != nil {
 		t.Fail()
 	}
 }
@@ -217,8 +217,8 @@ func TestUnsuccessfulPaddedCrawl(t *testing.T) {
 	pattern, _ := FindPattern(mkPaddedUrl(s, 100, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	res := StartCrawl(number, format, pattern, decrementCrawl)
-	if res == 0 {
+	_, err := StartCrawl(number, format, pattern, decrementCrawl)
+	if err == nil {
 		t.Fail()
 	}
 }

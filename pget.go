@@ -209,8 +209,14 @@ func dualCrawl(number int, format string, pattern *Pattern) int {
 	return 0
 }
 
-func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)int)) int {
-	return fn(number, format, pattern)
+func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)int)) (int, error) {
+	found, err := probeExistence(fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix))
+	if err != nil {
+		return 0, err
+	} else if !found {
+		return 0, fmt.Errorf("Resource not found")
+	}
+	return fn(number, format, pattern), nil
 }
 
 func main() {
