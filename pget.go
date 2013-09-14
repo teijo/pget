@@ -201,6 +201,18 @@ func printUsage() {
 	println("usage: pget <url>")
 }
 
+func dualCrawl(number int, format string, pattern *Pattern) int {
+	chanA, chanB := make(chan int), make(chan int)
+	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, chanA)
+	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, chanB)
+	fmt.Printf("Crawler 1 stopped at %d, crawler 2 stopped at %d\n", <-chanA, <-chanB)
+	return 0
+}
+
+func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)int)) int {
+	return fn(number, format, pattern)
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		printUsage()
@@ -215,10 +227,6 @@ func main() {
 	number, format, _ := ParseIndexAndFormat(pattern)
 	fmt.Printf("Parse results: number %d, format %s\n", number, format)
 
-	chanA, chanB := make(chan int), make(chan int)
-	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, chanA)
-	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, chanB)
-	fmt.Printf("Crawler 1 stopped at %d, crawler 2 stopped at %d\n",
-		<-chanA, <-chanB)
+	StartCrawl(number, format, pattern, dualCrawl)
 	os.Exit(0)
 }

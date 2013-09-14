@@ -165,17 +165,21 @@ func TestPaddingProbe(t *testing.T) {
 
 func decrement(index int) int { return index - 1 }
 
+func decrementCrawl(number int, format string, pattern *Pattern) int {
+	c := make(chan int)
+	go Crawler(number, format, pattern, decrement, c)
+	return <-c
+}
+
 func TestSuccessfulCrawl(t *testing.T) {
 	s := loopbacKServer()
 	defer s.Close()
 
-	c := make(chan int)
-
 	pattern, _ := FindPattern(mkUrl(s, 10))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	go Crawler(number, format, pattern, decrement, c)
-	if <-c != 0 {
+	res := StartCrawl(number, format, pattern, decrementCrawl)
+	if res != 0 {
 		t.Fail()
 	}
 }
@@ -184,13 +188,11 @@ func TestUnsuccessfulCrawl(t *testing.T) {
 	s := loopbacKServer()
 	defer s.Close()
 
-	c := make(chan int)
-
 	pattern, _ := FindPattern(mkUrl(s, 100))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	go Crawler(number, format, pattern, decrement, c)
-	if <-c == 0 {
+	res := StartCrawl(number, format, pattern, decrementCrawl)
+	if res == 0 {
 		t.Fail()
 	}
 }
@@ -199,13 +201,11 @@ func TestSuccessfulPaddedCrawl(t *testing.T) {
 	s := loopbacKServer()
 	defer s.Close()
 
-	c := make(chan int)
-
 	pattern, _ := FindPattern(mkPaddedUrl(s, 10, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	go Crawler(number, format, pattern, decrement, c)
-	if <-c != 0 {
+	res := StartCrawl(number, format, pattern, decrementCrawl)
+	if res != 0 {
 		t.Fail()
 	}
 }
@@ -214,13 +214,11 @@ func TestUnsuccessfulPaddedCrawl(t *testing.T) {
 	s := loopbacKServer()
 	defer s.Close()
 
-	c := make(chan int)
-
 	pattern, _ := FindPattern(mkPaddedUrl(s, 100, 5))
 	number, format, _ := ParseIndexAndFormat(pattern)
 
-	go Crawler(number, format, pattern, decrement, c)
-	if <-c == 0 {
+	res := StartCrawl(number, format, pattern, decrementCrawl)
+	if res == 0 {
 		t.Fail()
 	}
 }
