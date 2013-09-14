@@ -123,7 +123,7 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 	return number, format, err
 }
 
-func ProbeUrlResource(urlString string) bool {
+func downloadUrl(urlString string) bool {
 	res, err := http.Get(urlString)
 
 	if (err != nil) {
@@ -174,19 +174,19 @@ func ClosestShorterInt(number int) int {
 	return (number/multiplier)*multiplier - 1
 }
 
-func BuildUrl(scan int, format string, pattern *Pattern) string {
+func buildUrl(scan int, format string, pattern *Pattern) string {
 	printFmt := fmt.Sprintf("%%s%s%%s", format)
 	return fmt.Sprintf(printFmt, pattern.prefix, scan, pattern.suffix)
 }
 
-func Crawl(scan int, format string, pattern *Pattern, channel chan bool) {
-	channel <- ProbeUrlResource(BuildUrl(scan, format, pattern))
+func crawl(scan int, format string, pattern *Pattern, channel chan bool) {
+	channel <- downloadUrl(buildUrl(scan, format, pattern))
 }
 
 func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
 	channel := make(chan bool)
 	for {
-		go Crawl(scan, format, pattern, channel)
+		go crawl(scan, format, pattern, channel)
 		if !<-channel {
 			break
 		}
