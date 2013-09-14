@@ -66,20 +66,19 @@ func tryFindPath(u *url.URL) (bool, *Pattern) {
 	return false, nil
 }
 
-// Extract segment of given URL that contains the index for the resource.
 func FindPattern(urlString string) (*Pattern, error) {
 	u, err := url.Parse(urlString)
 	if (err != nil) {
 		return nil, err
 	}
 
-	if match, pat := tryFindFile(u); match {
-		return pat, nil
-	} else if match, pat = tryFindQuery(u); match {
-		return pat, nil
-	} else if match, pat = tryFindPath(u); match {
-		return pat, nil
+	fns := [](func (*url.URL)(bool, *Pattern)){tryFindFile, tryFindQuery, tryFindPath}
+	for _, fn := range fns {
+		if match, pat := fn(u); match {
+			return pat, nil
+		}
 	}
+
 	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)
 }
 
