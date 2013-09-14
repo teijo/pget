@@ -43,24 +43,21 @@ func condQueryJoin(a string, u *url.URL) string {
 
 func tryFindFile(u *url.URL) (bool, *Pattern) {
 	filePath, file := fileName(u)
-	match, pat := extractIndex(file)
-	if match {
+	if match, pat := extractIndex(file); match {
 		return true, &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}
 	}
 	return false, nil
 }
 
 func tryFindQuery(u *url.URL) (bool, *Pattern) {
-	match, pat := extractIndex(u.RawQuery)
-	if match {
+	if match, pat := extractIndex(u.RawQuery); match {
 		return true, &Pattern{fmt.Sprintf("http://%s%s?%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}
 	}
 	return false, nil
 }
 
 func tryFindPath(u *url.URL) (bool, *Pattern) {
-	match, pat := extractIndex(u.Path)
-	if match {
+	if match, pat := extractIndex(u.Path); match {
 		return true, &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}
 	}
 	return false, nil
