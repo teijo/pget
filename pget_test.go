@@ -157,7 +157,8 @@ func TestPaddingProbe(t *testing.T) {
 	defer s.Close()
 
 	pattern, _ := FindPattern(mkUrl(s, 10))
-	if TestPadding(pattern.prefix, pattern.suffix, StrToI(pattern.match)) != true {
+	value, _ := StrToI(pattern.match)
+	if TestPadding(pattern.prefix, pattern.suffix, value) != true {
 		t.Fail()
 	}
 }

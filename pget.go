@@ -91,10 +91,13 @@ func probeExistence(url string) (bool, error) {
 	return (res.StatusCode == http.StatusOK), nil
 }
 
-func StrToI(number string) int {
+func StrToI(number string) (int, error) {
 	var i64 int64 = 0
-	i64, _ = strconv.ParseInt(number, 10, 16)
-	return int(i64)
+	i64, err := strconv.ParseInt(number, 10, 16)
+	if err != nil {
+		return int(i64), err
+	}
+	return int(i64), nil
 }
 
 func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
@@ -106,7 +109,10 @@ func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 }
 
 func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error) {
-	number = StrToI(pattern.match)
+	number, err = StrToI(pattern.match)
+	if err != nil {
+		return 0, "", err
+	}
 	maxPadding := len(pattern.match)
 	if maxPadding > 1 && (pattern.match[0] == '0') {
 		format = fmt.Sprintf("%%0%dd", maxPadding)
