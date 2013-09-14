@@ -83,32 +83,38 @@ func FindPattern(urlString string) (*Pattern, error) {
 	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)
 }
 
-func probeExistence(url string) bool {
-	return false
+func probeExistence(url string) (bool, error) {
+	res, err := http.Head(url)
+	if err != nil {
+		return false, err
+	}
+	return (res.StatusCode == http.StatusOK), nil
 }
 
-func testPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
+func StrToI(number string) int {
+	var i64 int64 = 0
+	i64, _ = strconv.ParseInt(number, 10, 16)
+	return int(i64)
+}
+
+func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 	format := fmt.Sprintf("%%0%dd", IntLen(testIndex))
 	closest := ClosestShorterInt(testIndex)
 	paddedIndexString := fmt.Sprintf(format, closest)
-	return probeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
-}
-
-func paddingFound(pattern *Pattern, index int) bool {
-	return testPadding(pattern.prefix, pattern.suffix, index)
+	found, _ := probeExistence(fmt.Sprintf("%s%s%s", urlPrefix, paddedIndexString, urlSuffix))
+	return found
 }
 
 func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error) {
-	var i64 int64 = 0
-	i64, err = strconv.ParseInt(pattern.match, 10, 16)
+	number = StrToI(pattern.match)
 	maxPadding := len(pattern.match)
-	if maxPadding > 1 && (pattern.match[0] == '0') || paddingFound(pattern, int(i64)) {
+	if maxPadding > 1 && (pattern.match[0] == '0') {
 		format = fmt.Sprintf("%%0%dd", maxPadding)
 	} else {
 		format = "%d"
 	}
 
-	return int(i64), format, err
+	return number, format, err
 }
 
 func ProbeUrlResource(urlString string) bool {

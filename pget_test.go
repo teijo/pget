@@ -152,6 +152,16 @@ func TestFailingLoopback(t *testing.T) {
 	}
 }
 
+func TestPaddingProbe(t *testing.T) {
+	s := loopbacKServer()
+	defer s.Close()
+
+	pattern, _ := FindPattern(mkUrl(s, 10))
+	if TestPadding(pattern.prefix, pattern.suffix, StrToI(pattern.match)) != true {
+		t.Fail()
+	}
+}
+
 func decrement(index int) int { return index - 1 }
 
 func TestSuccessfulCrawl(t *testing.T) {
