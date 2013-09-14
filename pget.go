@@ -41,28 +41,45 @@ func condQueryJoin(a string, u *url.URL) string {
 	return fmt.Sprintf("%s", a)
 }
 
+func tryFindFile(u *url.URL) (bool, *Pattern) {
+	filePath, file := fileName(u)
+	match, pat := extractIndex(file)
+	if match {
+		return true, &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}
+	}
+	return false, nil
+}
+
+func tryFindQuery(u *url.URL) (bool, *Pattern) {
+	match, pat := extractIndex(u.RawQuery)
+	if match {
+		return true, &Pattern{fmt.Sprintf("http://%s%s?%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}
+	}
+	return false, nil
+}
+
+func tryFindPath(u *url.URL) (bool, *Pattern) {
+	match, pat := extractIndex(u.Path)
+	if match {
+		return true, &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}
+	}
+	return false, nil
+}
+
+// Extract segment of given URL that contains the index for the resource.
 func FindPattern(urlString string) (*Pattern, error) {
 	u, err := url.Parse(urlString)
 	if (err != nil) {
 		return nil, err
 	}
 
-	filePath, file := fileName(u)
-	match, pat := extractIndex(file)
-	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s/%s", u.Host, filePath, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}, nil
+	if match, pat := tryFindFile(u); match {
+		return pat, nil
+	} else if match, pat = tryFindQuery(u); match {
+		return pat, nil
+	} else if match, pat = tryFindPath(u); match {
+		return pat, nil
 	}
-
-	match, pat = extractIndex(u.RawQuery)
-	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s?%s", u.Host, u.Path, pat.prefix), pat.match, pat.suffix}, nil
-	}
-
-	match, pat = extractIndex(u.Path)
-	if match {
-		return &Pattern{fmt.Sprintf("http://%s%s", u.Host, pat.prefix), pat.match, condQueryJoin(pat.suffix, u)}, nil
-	}
-
 	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)
 }
 
