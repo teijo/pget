@@ -123,8 +123,8 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 	return number, format, err
 }
 
-func downloadUrl(urlString string) bool {
-	res, err := http.Get(urlString)
+func downloadUrl(u *url.URL) bool {
+	res, err := http.Get(u.String())
 
 	if (err != nil) {
 		fmt.Printf("GET FAILED: %s\n", err)
@@ -132,14 +132,12 @@ func downloadUrl(urlString string) bool {
 	}
 
 	defer res.Body.Close()
-	fmt.Printf("Probing %s ... %d\n", urlString, res.StatusCode)
+	fmt.Printf("Probing %s ... %d\n", u.String(), res.StatusCode)
 
 	if res.StatusCode != 200 {
 		return false
 	}
 
-	urlSegments := strings.Split(urlString, "/")
-	filename := urlSegments[len(urlSegments) - 1]
 	body, err := ioutil.ReadAll(res.Body)
 	if (err != nil) {
 		fmt.Printf("Reading FAILED: %s\n", err)
@@ -150,6 +148,7 @@ func downloadUrl(urlString string) bool {
 		return true
 	}
 
+	_, filename := fileName(u)
 	err = ioutil.WriteFile(filename, body, os.ModePerm)
 	if (err != nil) {
 		fmt.Printf("Writing FAILED: %s\n", err)
@@ -174,9 +173,10 @@ func ClosestShorterInt(number int) int {
 	return (number/multiplier)*multiplier - 1
 }
 
-func buildUrl(scan int, format string, pattern *Pattern) string {
+func buildUrl(scan int, format string, pattern *Pattern) *url.URL {
 	printFmt := fmt.Sprintf("%%s%s%%s", format)
-	return fmt.Sprintf(printFmt, pattern.prefix, scan, pattern.suffix)
+	u, _ := url.Parse(fmt.Sprintf(printFmt, pattern.prefix, scan, pattern.suffix))
+	return u
 }
 
 func crawl(scan int, format string, pattern *Pattern, channel chan bool) {
