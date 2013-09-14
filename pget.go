@@ -18,6 +18,10 @@ type Pattern struct {
 	suffix string
 }
 
+func Dump(variable interface{}) {
+	fmt.Printf("%+v\n", variable)
+}
+
 func fileName(u *url.URL) (string, string) {
 	var urlSegments []string = strings.Split(u.Path, "/")
 	last := len(urlSegments) - 1
