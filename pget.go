@@ -190,11 +190,12 @@ func dualCrawl(number int, format string, pattern *Pattern) int {
 }
 
 func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)int)) (int, error) {
-	found, err := probeExistence(fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix))
+	urlString := fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix)
+	found, err := probeExistence(urlString)
 	if err != nil {
 		return 0, err
 	} else if !found {
-		return 0, fmt.Errorf("Resource not found")
+		return 0, fmt.Errorf("Resource \"%s\" not found", urlString)
 	}
 	return fn(number, format, pattern), nil
 }
@@ -213,6 +214,9 @@ func main() {
 	number, format, _ := ParseIndexAndFormat(pattern)
 	fmt.Printf("Detected pattern %s starting from index %d\n", format, number)
 
-	StartCrawl(number, format, pattern, dualCrawl)
+	_, err = StartCrawl(number, format, pattern, dualCrawl)
+	if err != nil {
+		fmt.Printf("Crawling failed: %s\n", err)
+	}
 	os.Exit(0)
 }
