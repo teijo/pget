@@ -164,13 +164,12 @@ func Crawler(scan int, format string, pattern *Pattern, next func (int) int, don
 	for {
 		u := buildUrl(scan, format, pattern)
 		_, filename := fileName(u)
-		fmt.Printf("GET %s -> ", u.String())
 		go func() { channel <- downloadUrl(u, filename) }()
 		if err := <-channel; err != nil {
-			fmt.Printf("[%s]\n", err)
+			fmt.Printf("GET %s -> [%s]\n", u.String(), err)
 			break
 		}
-		fmt.Printf("%s\n", filename)
+		fmt.Printf("GET %s -> %s\n", u.String(), filename)
 		scan = next(scan)
 	}
 	done <- scan
