@@ -160,6 +160,7 @@ func buildUrl(scan int, format string, pattern *Pattern) *url.URL {
 }
 
 func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
+	downloadCount := 0
 	channel := make(chan error)
 	for {
 		u := buildUrl(scan, format, pattern)
@@ -169,10 +170,11 @@ func Crawler(scan int, format string, pattern *Pattern, next func (int) int, don
 			fmt.Printf("GET %s -> [%s]\n", u.String(), err)
 			break
 		}
+		downloadCount++
 		fmt.Printf("GET %s -> %s\n", u.String(), filename)
 		scan = next(scan)
 	}
-	done <- scan
+	done <- downloadCount
 }
 
 func printUsage() {
@@ -182,11 +184,10 @@ func printUsage() {
 }
 
 func dualCrawl(number int, format string, pattern *Pattern) int {
-	chanA, chanB := make(chan int), make(chan int)
-	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, chanA)
-	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, chanB)
-	fmt.Printf("Crawler 1 stopped at %d, crawler 2 stopped at %d\n", <-chanA, <-chanB)
-	return 0
+	descCount, ascCount := make(chan int), make(chan int)
+	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, descCount)
+	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, ascCount)
+	return <-descCount + <-ascCount
 }
 
 func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)int)) (int, error) {
@@ -214,9 +215,10 @@ func main() {
 	number, format, _ := ParseIndexAndFormat(pattern)
 	fmt.Printf("Detected pattern %s starting from index %d\n", format, number)
 
-	_, err = StartCrawl(number, format, pattern, dualCrawl)
+	downloadCount, err := StartCrawl(number, format, pattern, dualCrawl)
 	if err != nil {
 		fmt.Printf("Crawling failed: %s\n", err)
 	}
+	fmt.Printf("Downloaded %d files\n", downloadCount)
 	os.Exit(0)
 }

@@ -180,7 +180,7 @@ func TestSuccessfulCrawl(t *testing.T) {
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	res, err := StartCrawl(number, format, pattern, decrementCrawl)
-	if res != 0 || err != nil {
+	if res != 10 || err != nil {
 		t.Fail()
 	}
 }
@@ -206,7 +206,7 @@ func TestSuccessfulPaddedCrawl(t *testing.T) {
 	number, format, _ := ParseIndexAndFormat(pattern)
 
 	res, err := StartCrawl(number, format, pattern, decrementCrawl)
-	if res != 0 || err != nil {
+	if res != 10 || err != nil {
 		t.Fail()
 	}
 }
