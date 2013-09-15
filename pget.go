@@ -123,39 +123,28 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 	return number, format, err
 }
 
-func downloadUrl(u *url.URL) bool {
+func downloadUrl(u *url.URL, filename string) error {
 	res, err := http.Get(u.String())
-
-	if (err != nil) {
-		fmt.Printf("GET FAILED: %s\n", err)
-		return false
+	if err != nil {
+		return err
 	}
 
 	defer res.Body.Close()
-	fmt.Printf("Probing %s ... %d\n", u.String(), res.StatusCode)
 
 	if res.StatusCode != 200 {
-		return false
+		return fmt.Errorf("Status %d", res.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if (err != nil) {
-		fmt.Printf("Reading FAILED: %s\n", err)
-		return false
+		return err
+	} else if (len(body) == 0) {
+		return nil
+	} else if err = ioutil.WriteFile(filename, body, os.ModePerm); err != nil {
+		return err
 	}
 
-	if (len(body) == 0) {
-		return true
-	}
-
-	_, filename := fileName(u)
-	err = ioutil.WriteFile(filename, body, os.ModePerm)
-	if (err != nil) {
-		fmt.Printf("Writing FAILED: %s\n", err)
-		return false
-	}
-
-	return true
+	return nil
 }
 
 func IntLen(number int) int {
@@ -180,12 +169,17 @@ func buildUrl(scan int, format string, pattern *Pattern) *url.URL {
 }
 
 func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
-	channel := make(chan bool)
+	channel := make(chan error)
 	for {
-		go func() { channel <- downloadUrl(buildUrl(scan, format, pattern)) }()
-		if !<-channel {
+		u := buildUrl(scan, format, pattern)
+		_, filename := fileName(u)
+		fmt.Printf("Probing %s -> ", u.String())
+		go func() { channel <- downloadUrl(u, filename) }()
+		if err := <-channel; err != nil {
+			fmt.Printf("[%s]\n", err)
 			break
 		}
+		fmt.Printf("%s\n", filename)
 		scan = next(scan)
 	}
 	done <- scan
