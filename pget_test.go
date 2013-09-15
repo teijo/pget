@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"strconv"
 )
 
 func TestNumberPattern(t *testing.T) {
@@ -157,7 +158,7 @@ func TestPaddingProbe(t *testing.T) {
 	defer s.Close()
 
 	pattern, _ := FindPattern(mkUrl(s, 10))
-	value, _ := StrToI(pattern.match)
+	value, _ := strconv.Atoi(pattern.match)
 	if TestPadding(pattern.prefix, pattern.suffix, value) != true {
 		t.Fail()
 	}

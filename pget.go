@@ -91,15 +91,6 @@ func probeExistence(url string) (bool, error) {
 	return (res.StatusCode == http.StatusOK), nil
 }
 
-func StrToI(number string) (int, error) {
-	var i64 int64 = 0
-	i64, err := strconv.ParseInt(number, 10, 16)
-	if err != nil {
-		return int(i64), err
-	}
-	return int(i64), nil
-}
-
 func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 	format := fmt.Sprintf("%%0%dd", IntLen(testIndex))
 	closest := ClosestShorterInt(testIndex)
@@ -109,7 +100,7 @@ func TestPadding(urlPrefix string, urlSuffix string, testIndex int) bool {
 }
 
 func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error) {
-	number, err = StrToI(pattern.match)
+	number, err = strconv.Atoi(pattern.match)
 	if err != nil {
 		return 0, "", err
 	}
@@ -173,7 +164,7 @@ func Crawler(scan int, format string, pattern *Pattern, next func (int) int, don
 	for {
 		u := buildUrl(scan, format, pattern)
 		_, filename := fileName(u)
-		fmt.Printf("Probing %s -> ", u.String())
+		fmt.Printf("GET %s -> ", u.String())
 		go func() { channel <- downloadUrl(u, filename) }()
 		if err := <-channel; err != nil {
 			fmt.Printf("[%s]\n", err)
