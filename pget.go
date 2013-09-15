@@ -80,7 +80,7 @@ func FindPattern(urlString string) (*Pattern, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("No pattern found in \"%s\"\n", urlString)
+	return nil, fmt.Errorf("No pattern detected in \"%s\"", urlString)
 }
 
 func probeExistence(url string) (bool, error) {
@@ -211,7 +211,7 @@ func main() {
 		os.Exit(1)
 	}
 	number, format, _ := ParseIndexAndFormat(pattern)
-	fmt.Printf("Parse results: number %d, format %s\n", number, format)
+	fmt.Printf("Detected pattern %s starting from index %d\n", format, number)
 
 	StartCrawl(number, format, pattern, dualCrawl)
 	os.Exit(0)
