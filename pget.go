@@ -179,14 +179,10 @@ func buildUrl(scan int, format string, pattern *Pattern) *url.URL {
 	return u
 }
 
-func crawl(scan int, format string, pattern *Pattern, channel chan bool) {
-	channel <- downloadUrl(buildUrl(scan, format, pattern))
-}
-
 func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
 	channel := make(chan bool)
 	for {
-		go crawl(scan, format, pattern, channel)
+		go func() { channel <- downloadUrl(buildUrl(scan, format, pattern)) }()
 		if !<-channel {
 			break
 		}
