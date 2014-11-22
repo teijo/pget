@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"math"
+	"time"
 	"net/url"
 	"net/http"
 	"io/ioutil"
@@ -16,6 +17,35 @@ type Pattern struct {
 	prefix string
 	match  string
 	suffix string
+}
+
+type DownloadResult struct {
+	error error
+	bytes int64
+	count int
+	duration time.Duration
+}
+
+func (d DownloadResult) Ok(bytes int64, count int, duration time.Duration) DownloadResult {
+	d.bytes = bytes
+	d.count = count
+	d.duration = duration
+	return d
+}
+
+func (d DownloadResult) Fail(err error) DownloadResult {
+	d.error = err
+	return d
+}
+
+func (d* DownloadResult) Add(d2 DownloadResult) {
+	d.count += d2.count
+	d.bytes += d2.bytes
+	d.duration += d2.duration
+}
+
+func (d DownloadResult) toString() string {
+	return fmt.Sprintf("[%d] %.02fkBps", d.bytes, (float64(d.bytes) / 1024.0 / d.duration.Seconds()))
 }
 
 func Dump(variable interface{}) {
@@ -114,28 +144,32 @@ func ParseIndexAndFormat(pattern *Pattern) (number int, format string, err error
 	return number, format, err
 }
 
-func downloadUrl(u *url.URL, filename string) error {
+func downloadUrl(u *url.URL, filename string) DownloadResult {
+	result := DownloadResult{}
+	start := time.Now()
 	res, err := http.Get(u.String())
 	if err != nil {
-		return err
+		return result.Fail(err)
 	}
 
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		return fmt.Errorf("Status %d", res.StatusCode)
+		return result.Fail(fmt.Errorf("Status %d", res.StatusCode))
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
+	downloaded := 1
 	if (err != nil) {
-		return err
+		return result.Fail(err)
 	} else if (len(body) == 0) {
-		return nil
+		downloaded = 0
 	} else if err = ioutil.WriteFile(filename, body, os.ModePerm); err != nil {
-		return err
+		return result.Fail(err)
 	}
+	end := time.Now()
 
-	return nil
+	return result.Ok(res.ContentLength, downloaded, end.Sub(start))
 }
 
 func IntLen(number int) int {
@@ -159,22 +193,23 @@ func buildUrl(scan int, format string, pattern *Pattern) *url.URL {
 	return u
 }
 
-func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan int) {
-	downloadCount := 0
-	channel := make(chan error)
+func Crawler(scan int, format string, pattern *Pattern, next func (int) int, done chan DownloadResult) {
+	channel := make(chan DownloadResult)
+	total := DownloadResult{}
 	for {
 		u := buildUrl(scan, format, pattern)
 		_, filename := fileName(u)
 		go func() { channel <- downloadUrl(u, filename) }()
-		if err := <-channel; err != nil {
-			fmt.Printf("GET %s -> [%s]\n", u.String(), err)
+		result := <-channel
+		if result.error != nil {
+			fmt.Printf("GET %s -> [%s]\n", u.String(), result.error)
 			break
 		}
-		downloadCount++
-		fmt.Printf("GET %s -> %s\n", u.String(), filename)
+		total.Add(result)
+		fmt.Printf("GET %s %s -> %s\n", u.String(), result.toString(), filename)
 		scan = next(scan)
 	}
-	done <- downloadCount
+	done <- total
 }
 
 func printUsage() {
@@ -183,20 +218,23 @@ func printUsage() {
 	println("usage: pget <url>")
 }
 
-func dualCrawl(number int, format string, pattern *Pattern) int {
-	descCount, ascCount := make(chan int), make(chan int)
-	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, descCount)
-	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, ascCount)
-	return <-descCount + <-ascCount
+func dualCrawl(number int, format string, pattern *Pattern) DownloadResult {
+	result := DownloadResult{}
+	desc, asc := make(chan DownloadResult), make(chan DownloadResult)
+	go Crawler(number, format, pattern, func(index int) int { return index - 1 }, desc)
+	go Crawler(number + 1, format, pattern, func(index int) int { return index + 1 }, asc)
+	result.Add(<- desc)
+	result.Add(<- asc)
+	return result
 }
 
-func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)int)) (int, error) {
+func StartCrawl(number int, format string, pattern *Pattern, fn (func (int, string, *Pattern)DownloadResult)) (DownloadResult, error) {
 	urlString := fmt.Sprintf("%s%s%s", pattern.prefix, pattern.match, pattern.suffix)
 	found, err := probeExistence(urlString)
 	if err != nil {
-		return 0, err
+		return DownloadResult{}, err
 	} else if !found {
-		return 0, fmt.Errorf("Resource \"%s\" not found", urlString)
+		return DownloadResult{}, fmt.Errorf("Resource \"%s\" not found", urlString)
 	}
 	return fn(number, format, pattern), nil
 }
@@ -215,10 +253,10 @@ func main() {
 	number, format, _ := ParseIndexAndFormat(pattern)
 	fmt.Printf("Detected pattern %s starting from index %d\n", format, number)
 
-	downloadCount, err := StartCrawl(number, format, pattern, dualCrawl)
+	result, err := StartCrawl(number, format, pattern, dualCrawl)
 	if err != nil {
 		fmt.Printf("Crawling failed: %s\n", err)
 	}
-	fmt.Printf("Downloaded %d files\n", downloadCount)
+	fmt.Printf("Downloaded %d files at %s\n", result.count, result.toString())
 	os.Exit(0)
 }
